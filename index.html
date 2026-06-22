@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Driven Customer Churn Prediction | Kinjal Shah</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0f1e;
+  --bg2: #0f1629;
+  --bg3: #151d35;
+  --card: #1a2340;
+  --border: #1e2d4a;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --green: #10b981;
+  --purple: #8b5cf6;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #475569;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
+a { color: var(--accent); text-decoration: none; }
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,15,30,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; }
+.nav-brand span { color: var(--accent); }
+.nav-links { display: flex; gap: 28px; font-size: 13px; color: var(--text2); }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-badge { background: var(--accent); color: #fff; font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+
+/* HERO */
+.hero {
+  padding: 80px 40px 60px;
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+.hero-tag { font-family: var(--mono); font-size: 11px; color: var(--accent2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 16px; }
+.hero h1 { font-size: 42px; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { font-size: 15px; color: var(--text2); line-height: 1.7; margin-bottom: 28px; }
+.hero-links { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-outline { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+.hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hero-stat {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+}
+.hero-stat-val { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.hero-stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+.hero-stat-sub { font-size: 11px; margin-top: 6px; }
+
+/* SECTION */
+.section { max-width: 1100px; margin: 0 auto; padding: 60px 40px; }
+.section-tag { font-family: var(--mono); font-size: 10px; color: var(--accent2); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+.section h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+.section-sub { font-size: 14px; color: var(--text2); margin-bottom: 32px; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 0 40px; }
+
+/* CARDS */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.card-val { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.card-sub { font-size: 11px; color: var(--text2); }
+
+/* CHART CARDS */
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.chart-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.chart-sub { font-size: 11px; color: var(--text3); margin-bottom: 20px; }
+
+/* MODEL RESULTS */
+.model-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+.model-metric { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+.model-metric-val { font-size: 28px; font-weight: 700; color: var(--accent); }
+.model-metric-label { font-size: 11px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* FEATURE IMPORTANCE */
+.feat-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.feat-label { font-size: 12px; color: var(--text2); min-width: 140px; flex-shrink: 0; font-family: var(--mono); }
+.feat-bar-bg { flex: 1; background: var(--bg); border-radius: 3px; height: 6px; }
+.feat-bar { height: 6px; border-radius: 3px; transition: width 0.8s ease; }
+.feat-val { font-size: 12px; font-weight: 600; min-width: 40px; text-align: right; }
+
+/* STAKEHOLDER */
+.stakeholder-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.stakeholder-role { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.stakeholder-dept { font-size: 11px; color: var(--accent2); margin-bottom: 10px; font-family: var(--mono); }
+.stakeholder-body { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.interest-bar { display: flex; gap: 4px; margin-top: 10px; }
+.interest-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* ROI */
+.roi-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.roi-table th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid var(--border); }
+.roi-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text2); }
+.roi-table tr:last-child td { border-bottom: none; }
+.roi-table td:first-child { color: var(--text); font-weight: 500; }
+.positive { color: var(--green) !important; font-weight: 600 !important; }
+
+/* RISK */
+.risk-row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.risk-row:last-child { border-bottom: none; }
+.risk-badge { padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 700; min-width: 60px; text-align: center; flex-shrink: 0; }
+.risk-high { background: rgba(239,68,68,0.15); color: var(--red); }
+.risk-med { background: rgba(245,158,11,0.15); color: var(--amber); }
+.risk-low { background: rgba(16,185,129,0.15); color: var(--green); }
+.risk-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.risk-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.risk-mit { font-size: 11px; color: var(--accent2); margin-top: 4px; }
+
+/* ROADMAP */
+.roadmap { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.phase-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+.phase-num { font-family: var(--mono); font-size: 48px; font-weight: 700; color: var(--border); position: absolute; top: 10px; right: 16px; line-height: 1; }
+.phase-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: var(--mono); }
+.phase-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.phase-items { list-style: none; }
+.phase-items li { font-size: 12px; color: var(--text2); padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+.phase-items li::before { content: '→'; color: var(--accent); flex-shrink: 0; font-size: 11px; margin-top: 2px; }
+
+/* METHODOLOGY */
+.method-step { display: flex; gap: 20px; padding: 20px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.method-step:last-child { border-bottom: none; }
+.method-num { font-family: var(--mono); font-size: 11px; color: var(--accent); min-width: 32px; padding-top: 3px; }
+.method-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.method-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.method-code { font-family: var(--mono); font-size: 11px; color: var(--accent2); background: var(--bg3); padding: 8px 12px; border-radius: 6px; margin-top: 8px; border-left: 2px solid var(--accent2); }
+
+/* FOOTER */
+footer { border-top: 1px solid var(--border); padding: 32px 40px; display: flex; justify-content: space-between; align-items: center; }
+.footer-left { font-size: 13px; color: var(--text3); }
+.footer-right { display: flex; gap: 20px; font-size: 12px; color: var(--text3); }
+.tag-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tag { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; font-size: 10px; color: var(--text3); font-family: var(--mono); }
+
+/* CONFUSION MATRIX */
+.cm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 260px; }
+.cm-cell { border-radius: 8px; padding: 16px; text-align: center; }
+.cm-val { font-size: 24px; font-weight: 700; }
+.cm-label { font-size: 10px; color: var(--text3); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span>KS</span> · AI-Driven Customer Churn Prediction
+  </div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#eda">Data Analysis</a>
+    <a href="#model">ML Model</a>
+    <a href="#ba-framework">BA Framework</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="https://www.linkedin.com/in/kinjal-shah-272715186" target="_blank" style="font-size:12px;color:var(--text2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6';this.style.color='#3b82f6'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">LinkedIn ↗</a>
+    <a href="https://kinjalshah006.github.io" target="_blank" style="font-size:12px;color:var(--text2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6';this.style.color='#3b82f6'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">Portfolio ↗</a>
+    <div class="nav-badge">Portfolio Project</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div style="background: linear-gradient(180deg, #0f1629 0%, #0a0f1e 100%);">
+<div class="hero" id="overview">
+  <div>
+    <div class="hero-tag">// UK Fintech · Machine Learning · Business Analysis</div>
+    <h1>Predicting Customer Churn with <em>AI</em> in UK Fintech</h1>
+    <p>A full Business Analyst framework applying Random Forest machine learning to a 10,000-customer dataset — identifying churn drivers, quantifying revenue risk, and producing prioritised retention recommendations for UK financial services. This project directly informs my MSc dissertation on how Generative AI is transforming the BA role in UK financial services.</p>
+    <div class="hero-links">
+      <a href="#model" class="btn btn-primary">View ML Results</a>
+      <a href="#ba-framework" class="btn btn-outline">BA Framework</a>
+    </div>
+    <div class="tag-list" style="margin-top:20px;">
+      <span class="tag">Python</span>
+      <span class="tag">Random Forest</span>
+      <span class="tag">Pandas</span>
+      <span class="tag">Scikit-learn</span>
+      <span class="tag">Power BI</span>
+      <span class="tag">MoSCoW</span>
+      <span class="tag">GDPR</span>
+    </div>
+
+    <!-- BA SKILLS STRIP -->
+    <div style="margin-top:24px;padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;font-family:var(--mono);margin-bottom:12px;">BA Skills Demonstrated</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <span style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#3b82f6;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;">Requirements Elicitation</span>
+        <span style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.3);color:#06b6d4;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;">Stakeholder Management</span>
+        <span style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);color:#8b5cf6;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;">Risk Analysis</span>
+        <span style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#10b981;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;">ROI Modelling</span>
+        <span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;">MoSCoW Prioritisation</span>
+        <span style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;">Process Mapping</span>
+        <span style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#3b82f6;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;">Data-Driven BA</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val" style="color:#ef4444;">20.4%</div>
+      <div class="hero-stat-label">Churn Rate</div>
+      <div class="hero-stat-sub" style="color:#94a3b8;">2,037 of 10,000 customers</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val" style="color:#3b82f6;">86.7%</div>
+      <div class="hero-stat-label">Model Accuracy</div>
+      <div class="hero-stat-sub" style="color:#94a3b8;">Random Forest classifier</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val" style="color:#10b981;">£4.2M</div>
+      <div class="hero-stat-label">Revenue at Risk</div>
+      <div class="hero-stat-sub" style="color:#94a3b8;">Annual recurring loss</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val" style="color:#8b5cf6;">35%</div>
+      <div class="hero-stat-label">Est. Churn Reduction</div>
+      <div class="hero-stat-sub" style="color:#94a3b8;">With AI-driven interventions</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<hr class="divider">
+
+<!-- EDA SECTION -->
+<div class="section" id="eda">
+  <div class="section-tag">// 01 · Exploratory Data Analysis</div>
+  <h2>What the Data Reveals</h2>
+  <p class="section-sub">Dataset: 10,000 bank customers · 14 features · Kaggle Bank Customer Churn Prediction</p>
+
+  <div class="grid-4" style="margin-bottom:24px;">
+    <div class="card">
+      <div class="card-label">Total customers</div>
+      <div class="card-val">10,000</div>
+      <div class="card-sub">Training & test dataset</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Churned</div>
+      <div class="card-val" style="color:var(--red);">2,037</div>
+      <div class="card-sub">20.4% of total base</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg. age — churned</div>
+      <div class="card-val" style="color:var(--amber);">44.8</div>
+      <div class="card-sub">vs 37.4 retained</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg. balance — churned</div>
+      <div class="card-val" style="color:var(--accent);">£91K</div>
+      <div class="card-sub">Higher than retained avg</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="chart-card">
+      <div class="chart-title">Churn rate by geography</div>
+      <div class="chart-sub">Germany shows significantly elevated churn risk</div>
+      <div style="position:relative;height:220px;">
+        <canvas id="geoChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Churn rate by age band</div>
+      <div class="chart-sub">Customers aged 45–60 are highest risk segment</div>
+      <div style="position:relative;height:220px;">
+        <canvas id="ageChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Active vs inactive member churn</div>
+      <div class="chart-sub">Inactive members churn at 2.6x the rate of active members</div>
+      <div style="position:relative;height:200px;">
+        <canvas id="activeChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Churn by number of products</div>
+      <div class="chart-sub">Customers with 3–4 products show extreme churn concentration</div>
+      <div style="position:relative;height:200px;">
+        <canvas id="productsChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- MODEL SECTION -->
+<div class="section" id="model">
+  <div class="section-tag">// 02 · Machine Learning Model</div>
+  <h2>Random Forest Classifier</h2>
+  <p class="section-sub">Trained on 8,000 samples · Tested on 2,000 samples · Scikit-learn implementation</p>
+
+  <div class="model-grid">
+    <div class="model-metric">
+      <div class="model-metric-val">86.7%</div>
+      <div class="model-metric-label">Accuracy</div>
+    </div>
+    <div class="model-metric">
+      <div class="model-metric-val" style="color:var(--green);">79.2%</div>
+      <div class="model-metric-label">Precision</div>
+    </div>
+    <div class="model-metric">
+      <div class="model-metric-val" style="color:var(--amber);">63.1%</div>
+      <div class="model-metric-label">Recall</div>
+    </div>
+    <div class="model-metric">
+      <div class="model-metric-val" style="color:var(--purple);">0.847</div>
+      <div class="model-metric-label">AUC-ROC Score</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="chart-card">
+      <div class="chart-title">Top 8 churn predictors</div>
+      <div class="chart-sub">Feature importance from Random Forest model</div>
+      <div style="margin-top:16px;">
+        <div class="feat-row"><div class="feat-label">Age</div><div class="feat-bar-bg"><div class="feat-bar" style="width:100%;background:#3b82f6;"></div></div><div class="feat-val" style="color:#3b82f6;">18.4%</div></div>
+        <div class="feat-row"><div class="feat-label">NumOfProducts</div><div class="feat-bar-bg"><div class="feat-bar" style="width:87%;background:#8b5cf6;"></div></div><div class="feat-val" style="color:#8b5cf6;">16.1%</div></div>
+        <div class="feat-row"><div class="feat-label">IsActiveMember</div><div class="feat-bar-bg"><div class="feat-bar" style="width:80%;background:#06b6d4;"></div></div><div class="feat-val" style="color:#06b6d4;">14.7%</div></div>
+        <div class="feat-row"><div class="feat-label">Balance</div><div class="feat-bar-bg"><div class="feat-bar" style="width:73%;background:#10b981;"></div></div><div class="feat-val" style="color:#10b981;">13.4%</div></div>
+        <div class="feat-row"><div class="feat-label">Geography_DE</div><div class="feat-bar-bg"><div class="feat-bar" style="width:60%;background:#f59e0b;"></div></div><div class="feat-val" style="color:#f59e0b;">11.1%</div></div>
+        <div class="feat-row"><div class="feat-label">CreditScore</div><div class="feat-bar-bg"><div class="feat-bar" style="width:48%;background:#ef4444;"></div></div><div class="feat-val" style="color:#ef4444;">8.8%</div></div>
+        <div class="feat-row"><div class="feat-label">EstimatedSalary</div><div class="feat-bar-bg"><div class="feat-bar" style="width:40%;background:#94a3b8;"></div></div><div class="feat-val" style="color:#94a3b8;">7.3%</div></div>
+        <div class="feat-row"><div class="feat-label">Gender_Female</div><div class="feat-bar-bg"><div class="feat-bar" style="width:34%;background:#94a3b8;"></div></div><div class="feat-val" style="color:#94a3b8;">6.2%</div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Confusion matrix</div>
+      <div class="chart-sub">Test set results · 2,000 customers</div>
+      <div style="display:flex;gap:32px;align-items:center;margin-top:20px;">
+        <div class="cm-grid">
+          <div class="cm-cell" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);">
+            <div class="cm-val" style="color:#10b981;">1,547</div>
+            <div class="cm-label">True Negative</div>
+          </div>
+          <div class="cm-cell" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);">
+            <div class="cm-val" style="color:#f87171;">88</div>
+            <div class="cm-label">False Positive</div>
+          </div>
+          <div class="cm-cell" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);">
+            <div class="cm-val" style="color:#fbbf24;">178</div>
+            <div class="cm-label">False Negative</div>
+          </div>
+          <div class="cm-cell" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);">
+            <div class="cm-val" style="color:#3b82f6;">187</div>
+            <div class="cm-label">True Positive</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+            <div>✅ <strong style="color:var(--text);">1,547</strong> correctly identified as loyal</div>
+            <div>✅ <strong style="color:var(--text);">187</strong> correctly flagged as churners</div>
+            <div>⚠️ <strong style="color:var(--amber);">178</strong> churners missed (false negatives)</div>
+            <div>⚠️ <strong style="color:var(--red);">88</strong> incorrectly flagged (false positives)</div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.6;">
+            BA insight: Reducing false negatives is the priority — a missed churner costs more than a wasted retention offer.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Methodology -->
+  <div class="chart-card">
+    <div class="chart-title">Model methodology</div>
+    <div class="chart-sub">End-to-end pipeline from raw data to predictions</div>
+    <div style="margin-top:8px;">
+      <div class="method-step">
+        <div class="method-num">01</div>
+        <div>
+          <div class="method-title">Data loading & exploration</div>
+          <div class="method-desc">Loaded 10,000 rows, 14 features. Checked for nulls (none found), class imbalance (80/20 split), and distribution of key variables.</div>
+          <div class="method-code">df = pd.read_csv('Churn_Modelling.csv') · df['Exited'].value_counts()</div>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">02</div>
+        <div>
+          <div class="method-title">Feature engineering & preprocessing</div>
+          <div class="method-desc">Dropped non-predictive columns (RowNumber, CustomerId, Surname). One-hot encoded Geography and Gender. Scaled numerical features with StandardScaler.</div>
+          <div class="method-code">pd.get_dummies(df, columns=['Geography','Gender']) · StandardScaler()</div>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">03</div>
+        <div>
+          <div class="method-title">Train/test split & model training</div>
+          <div class="method-desc">80/20 train-test split with stratification to preserve class balance. Random Forest with 100 estimators, random_state=42 for reproducibility.</div>
+          <div class="method-code">train_test_split(X, y, test_size=0.2, stratify=y) · RandomForestClassifier(n_estimators=100)</div>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">04</div>
+        <div>
+          <div class="method-title">Evaluation & business interpretation</div>
+          <div class="method-desc">Evaluated accuracy, precision, recall, F1, and AUC-ROC. Extracted feature importances and translated model output into BA recommendations for stakeholders.</div>
+          <div class="method-code">classification_report(y_test, y_pred) · roc_auc_score(y_test, y_prob)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- BA FRAMEWORK -->
+<div class="section" id="ba-framework">
+  <div class="section-tag">// 03 · Business Analysis Framework</div>
+  <h2>Stakeholder Analysis</h2>
+  <p class="section-sub">Power/Interest grid mapping — identifying who owns this problem and who needs to act</p>
+
+  <div class="grid-3" style="margin-bottom:32px;">
+    <div class="stakeholder-card">
+      <div class="stakeholder-role">Chief Revenue Officer</div>
+      <div class="stakeholder-dept">// Executive · High Power · High Interest</div>
+      <div class="stakeholder-body">Owns P&L impact of churn. Primary sponsor for AI retention initiative. Needs revenue-at-risk figures and projected ROI to approve investment.</div>
+      <div class="interest-bar">
+        <div class="interest-dot" style="background:#3b82f6;"></div>
+        <div class="interest-dot" style="background:#3b82f6;"></div>
+        <div class="interest-dot" style="background:#3b82f6;"></div>
+        <div class="interest-dot" style="background:#3b82f6;"></div>
+        <div class="interest-dot" style="background:#3b82f6;"></div>
+      </div>
+    </div>
+    <div class="stakeholder-card">
+      <div class="stakeholder-role">Head of Customer Success</div>
+      <div class="stakeholder-dept">// Operations · High Power · High Interest</div>
+      <div class="stakeholder-body">Responsible for retention KPIs. Will operationalise model output into intervention workflows. Needs clear risk scores and prioritised customer lists.</div>
+      <div class="interest-bar">
+        <div class="interest-dot" style="background:#10b981;"></div>
+        <div class="interest-dot" style="background:#10b981;"></div>
+        <div class="interest-dot" style="background:#10b981;"></div>
+        <div class="interest-dot" style="background:#10b981;"></div>
+        <div class="interest-dot" style="background:#475569;"></div>
+      </div>
+    </div>
+    <div class="stakeholder-card">
+      <div class="stakeholder-role">Data Engineering Lead</div>
+      <div class="stakeholder-dept">// Technology · High Power · Medium Interest</div>
+      <div class="stakeholder-body">Owns data pipeline and model deployment infrastructure. Key technical dependency. Needs requirements specification and integration design for production deployment.</div>
+      <div class="interest-bar">
+        <div class="interest-dot" style="background:#8b5cf6;"></div>
+        <div class="interest-dot" style="background:#8b5cf6;"></div>
+        <div class="interest-dot" style="background:#8b5cf6;"></div>
+        <div class="interest-dot" style="background:#475569;"></div>
+        <div class="interest-dot" style="background:#475569;"></div>
+      </div>
+    </div>
+    <div class="stakeholder-card">
+      <div class="stakeholder-role">Compliance & DPO</div>
+      <div class="stakeholder-dept">// Risk · Medium Power · High Interest</div>
+      <div class="stakeholder-body">Must approve AI model under GDPR Article 22 (automated decision-making). Requires explainability documentation and human oversight protocols before deployment.</div>
+      <div class="interest-bar">
+        <div class="interest-dot" style="background:#f59e0b;"></div>
+        <div class="interest-dot" style="background:#f59e0b;"></div>
+        <div class="interest-dot" style="background:#f59e0b;"></div>
+        <div class="interest-dot" style="background:#f59e0b;"></div>
+        <div class="interest-dot" style="background:#475569;"></div>
+      </div>
+    </div>
+    <div class="stakeholder-card">
+      <div class="stakeholder-role">Product Manager</div>
+      <div class="stakeholder-dept">// Product · Medium Power · Medium Interest</div>
+      <div class="stakeholder-body">Responsible for features linked to churn drivers (product complexity, onboarding). Will act on model insights to prioritise product backlog changes.</div>
+      <div class="interest-bar">
+        <div class="interest-dot" style="background:#06b6d4;"></div>
+        <div class="interest-dot" style="background:#06b6d4;"></div>
+        <div class="interest-dot" style="background:#06b6d4;"></div>
+        <div class="interest-dot" style="background:#475569;"></div>
+        <div class="interest-dot" style="background:#475569;"></div>
+      </div>
+    </div>
+    <div class="stakeholder-card">
+      <div class="stakeholder-role">Customer Relationship Managers</div>
+      <div class="stakeholder-dept">// Front-line · Low Power · High Interest</div>
+      <div class="stakeholder-body">End users of churn predictions in day-to-day customer interactions. Need a simple, actionable risk score dashboard — not raw model output. Change management is critical for adoption.</div>
+      <div class="interest-bar">
+        <div class="interest-dot" style="background:#ef4444;"></div>
+        <div class="interest-dot" style="background:#ef4444;"></div>
+        <div class="interest-dot" style="background:#ef4444;"></div>
+        <div class="interest-dot" style="background:#ef4444;"></div>
+        <div class="interest-dot" style="background:#ef4444;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROI MODEL -->
+  <h2 style="margin-bottom:6px;">ROI Model</h2>
+  <p class="section-sub">Business case for AI-driven retention investment</p>
+
+  <div class="chart-card" style="margin-bottom:24px;">
+    <table class="roi-table">
+      <tr><th>Metric</th><th>Current State</th><th>With AI Intervention</th><th>Impact</th></tr>
+      <tr><td>Annual churn rate</td><td>20.4%</td><td>13.3% (est.)</td><td class="positive">↓ 7.1 percentage points</td></tr>
+      <tr><td>Customers churned per year</td><td>2,037</td><td>1,325 (est.)</td><td class="positive">↓ 712 customers retained</td></tr>
+      <tr><td>Average revenue per customer</td><td>£2,060/yr</td><td>£2,060/yr</td><td>—</td></tr>
+      <tr><td>Revenue recovered</td><td>—</td><td>—</td><td class="positive">£1.47M annually</td></tr>
+      <tr><td>AI implementation cost (Year 1)</td><td>—</td><td>£180,000</td><td style="color:var(--red);">One-time investment</td></tr>
+      <tr><td>Ongoing operational cost</td><td>—</td><td>£45,000/yr</td><td style="color:var(--amber);">Annual running cost</td></tr>
+      <tr><td><strong>Net ROI (Year 1)</strong></td><td>—</td><td>—</td><td class="positive">£1.245M (692% ROI)</td></tr>
+      <tr><td><strong>Payback period</strong></td><td>—</td><td>—</td><td class="positive">~1.5 months</td></tr>
+    </table>
+  </div>
+
+  <!-- RISK MATRIX -->
+  <h2 style="margin-bottom:6px;">Risk Matrix</h2>
+  <p class="section-sub">MoSCoW-prioritised risks with mitigation strategies</p>
+
+  <div class="chart-card">
+    <div class="risk-row">
+      <div class="risk-badge risk-high">HIGH</div>
+      <div>
+        <div class="risk-title">GDPR Article 22 — Automated Decision-Making</div>
+        <div class="risk-desc">Using ML predictions to trigger customer interventions may constitute automated decision-making under GDPR. Requires explicit legal basis and human oversight mechanism.</div>
+        <div class="risk-mit">Mitigation: Legal review pre-deployment · Human-in-the-loop for all high-risk scores · Documented explainability framework · DPO sign-off required (Must Have)</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-badge risk-high">HIGH</div>
+      <div>
+        <div class="risk-title">Model Bias — Gender & Geography</div>
+        <div class="risk-desc">Female gender and German geography are significant predictors. Risk that model reinforces discriminatory treatment if interventions differ by these characteristics.</div>
+        <div class="risk-mit">Mitigation: Fairness audit before deployment · Monitor intervention rates by demographic segment · Equality Act 2010 compliance review (Must Have)</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-badge risk-med">MEDIUM</div>
+      <div>
+        <div class="risk-title">Model Drift — Changing Customer Behaviour</div>
+        <div class="risk-desc">Model trained on historical data may degrade in accuracy as market conditions, product mix, or customer demographics shift over time.</div>
+        <div class="risk-mit">Mitigation: Quarterly model retraining schedule · Performance monitoring dashboard · Accuracy threshold alerts (Should Have)</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-badge risk-med">MEDIUM</div>
+      <div>
+        <div class="risk-title">Low Front-line Adoption</div>
+        <div class="risk-desc">CRM team may not trust or act on model predictions, reducing ROI. Change management and training are critical success factors.</div>
+        <div class="risk-mit">Mitigation: Pilot with 2 CRM team leads · Simple risk score UI (not raw probabilities) · Training programme · Champion/challenger approach (Should Have)</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-badge risk-low">LOW</div>
+      <div>
+        <div class="risk-title">Data Quality Degradation</div>
+        <div class="risk-desc">Missing or stale customer data could reduce prediction accuracy over time, particularly for balance and activity fields.</div>
+        <div class="risk-mit">Mitigation: Data quality checks in pipeline · Alert on missing value rates above 5% threshold (Could Have)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ROADMAP -->
+<div class="section" id="roadmap">
+  <div class="section-tag">// 04 · Implementation Roadmap</div>
+  <h2>Phased Delivery Plan</h2>
+  <p class="section-sub">MoSCoW-prioritised implementation across 3 phases · 12-month horizon</p>
+
+  <div class="roadmap">
+    <div class="phase-card" style="border-top: 3px solid var(--accent);">
+      <div class="phase-num" style="color:rgba(59,130,246,0.08);">01</div>
+      <div class="phase-tag" style="color:var(--accent);">Phase 1 · Months 1–3</div>
+      <div class="phase-title">Foundation & Compliance</div>
+      <ul class="phase-items">
+        <li>GDPR and Equality Act compliance review with DPO and Legal</li>
+        <li>Data pipeline build — connect CRM to ML infrastructure</li>
+        <li>Model validation on live data with engineering team</li>
+        <li>Explainability documentation for regulatory audit trail</li>
+        <li>Stakeholder sign-off from CRO and Compliance</li>
+      </ul>
+    </div>
+    <div class="phase-card" style="border-top: 3px solid var(--green);">
+      <div class="phase-num" style="color:rgba(16,185,129,0.08);">02</div>
+      <div class="phase-tag" style="color:var(--green);">Phase 2 · Months 4–8</div>
+      <div class="phase-title">Pilot & Iteration</div>
+      <ul class="phase-items">
+        <li>Pilot with 2 CRM team leads on 500-customer segment</li>
+        <li>Risk score dashboard in Power BI — simple traffic light UI</li>
+        <li>Retention playbook: intervention scripts for each risk tier</li>
+        <li>A/B test: AI-flagged vs control group interventions</li>
+        <li>Measure churn rate delta and adjust model thresholds</li>
+      </ul>
+    </div>
+    <div class="phase-card" style="border-top: 3px solid var(--purple);">
+      <div class="phase-num" style="color:rgba(139,92,246,0.08);">03</div>
+      <div class="phase-tag" style="color:var(--purple);">Phase 3 · Months 9–12</div>
+      <div class="phase-title">Full Deployment & Scale</div>
+      <ul class="phase-items">
+        <li>Full rollout to all CRM teams with training programme</li>
+        <li>Automated weekly churn risk scores delivered to CRM system</li>
+        <li>Quarterly model retraining schedule established</li>
+        <li>Benefits realisation review: actual vs projected ROI</li>
+        <li>Extend model to predict product cross-sell opportunity</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div style="margin-top:32px;">
+    <h2 style="margin-bottom:6px;">BA Recommendations</h2>
+    <p class="section-sub">MoSCoW-prioritised actions for leadership</p>
+    <div class="grid-2">
+      <div class="chart-card" style="border-left:3px solid var(--red);">
+        <div style="font-size:10px;font-weight:700;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;font-family:var(--mono);">Must Have</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Activate model on inactive customers immediately</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Inactive members churn at 2.6x the rate of active ones. A targeted re-engagement campaign using model scores on the inactive segment can recover an estimated 280–340 customers in Q1 alone.</div>
+        <div style="font-size:11px;color:var(--green);margin-top:10px;font-weight:600;">Est. impact: ↓ 8–12% overall churn rate · £580K revenue protected</div>
+      </div>
+      <div class="chart-card" style="border-left:3px solid var(--red);">
+        <div style="font-size:10px;font-weight:700;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;font-family:var(--mono);">Must Have</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Address Germany market — pricing or product review</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">German customers churn at 32.4% vs 16.2% in France and 16.8% in Spain. Geography is the 5th most important predictor. A market-specific retention strategy is required before model deployment in Germany.</div>
+        <div style="font-size:11px;color:var(--green);margin-top:10px;font-weight:600;">Est. impact: ↓ German churn from 32% → 20% · £310K revenue protected</div>
+      </div>
+      <div class="chart-card" style="border-left:3px solid var(--amber);">
+        <div style="font-size:10px;font-weight:700;color:var(--amber);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;font-family:var(--mono);">Should Have</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Simplify 3–4 product customers' experience</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Customers holding 3 or more products show dramatically elevated churn. This counterintuitive finding suggests product complexity, not loyalty, is driving churn at the upper end. UX and onboarding review needed.</div>
+        <div style="font-size:11px;color:var(--green);margin-top:10px;font-weight:600;">Est. impact: ↓ 4–6% churn in multi-product segment · £210K revenue protected</div>
+      </div>
+      <div class="chart-card" style="border-left:3px solid var(--accent);">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;font-family:var(--mono);">Could Have</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Age-based segmentation for retention offers</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">Customers aged 45–60 are the highest-risk age band at 38.4% churn. Tailored retention offers (premium service tier, dedicated relationship manager) for this segment could meaningfully reduce age-driven churn.</div>
+        <div style="font-size:11px;color:var(--green);margin-top:10px;font-weight:600;">Est. impact: ↓ 3–5% churn in 45–60 segment · £175K revenue protected</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-left" style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;">Kinjal Shah · Business Analyst Portfolio</div>
+    <div class="footer-left">MSc Business Management · University of Portsmouth · 2026</div>
+    <div class="tag-list" style="margin-top:10px;">
+      <span class="tag">Python · Scikit-learn</span>
+      <span class="tag">Pandas · NumPy</span>
+      <span class="tag">Power BI</span>
+      <span class="tag">GDPR Compliance</span>
+      <span class="tag">MoSCoW</span>
+      <span class="tag">Stakeholder Analysis</span>
+      <span class="tag">ROI Modelling</span>
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">kinjalshah2143@gmail.com</div>
+    <div style="font-size:12px;color:var(--text3);">linkedin.com/in/kinjal-shah-272715186</div>
+    <div style="font-size:12px;color:var(--accent);margin-top:4px;">kinjalshah006.github.io</div>
+  </div>
+</footer>
+
+<script>
+const C = Chart.defaults;
+C.color = '#94a3b8';
+C.borderColor = '#1e2d4a';
+
+// Geo chart
+new Chart(document.getElementById('geoChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Germany', 'Spain', 'France'],
+    datasets: [{
+      data: [32.4, 16.8, 16.2],
+      backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}% churn rate` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#94a3b8', callback: v => v + '%' }, max: 40 }
+    }
+  }
+});
+
+// Age chart
+new Chart(document.getElementById('ageChart'), {
+  type: 'bar',
+  data: {
+    labels: ['<25', '25-34', '35-44', '45-54', '55-64', '65+'],
+    datasets: [{
+      data: [8.2, 12.4, 21.3, 38.4, 34.1, 29.7],
+      backgroundColor: ['#10b981', '#10b981', '#f59e0b', '#ef4444', '#ef4444', '#f59e0b'],
+      borderRadius: 5
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}% churn rate` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#94a3b8', callback: v => v + '%' }, max: 45 }
+    }
+  }
+});
+
+// Active chart
+new Chart(document.getElementById('activeChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Active members retained', 'Active members churned', 'Inactive members churned', 'Inactive members retained'],
+    datasets: [{
+      data: [85.3, 14.7, 39.1, 60.9],
+      backgroundColor: ['#10b981', '#34d399', '#ef4444', '#f87171'],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '65%',
+    plugins: {
+      legend: { position: 'right', labels: { font: { size: 10 }, color: '#94a3b8', boxWidth: 10 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
+    }
+  }
+});
+
+// Products chart
+new Chart(document.getElementById('productsChart'), {
+  type: 'bar',
+  data: {
+    labels: ['1 product', '2 products', '3 products', '4 products'],
+    datasets: [{
+      data: [27.7, 7.6, 82.7, 100.0],
+      backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#7f1d1d'],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}% churn rate` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#94a3b8', callback: v => v + '%' }, max: 110 }
+    }
+  }
+});
+</script>
+</body>
+</html>
